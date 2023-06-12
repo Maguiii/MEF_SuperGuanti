@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <LiquidCrystal_I2C.h>
+#include <VarSpeedServo.h>
 #include <TimerOne.h>
 #include <Wire.h>
 /* 
@@ -31,9 +32,7 @@
 #define clockPin 8 
 #define dataPin 5  
 
-#define servo1 9
-#define servo2 6
-#define servo3 11
+VarSpeedServo miservo_1, miservo_2, miservo_3;
 
 LiquidCrystal_I2C lcd(0x3F, 16, 2);
 
@@ -58,6 +57,10 @@ volatile byte contadorViajes = 0;
 volatile byte aleatorio = 0;
 volatile byte numAnterior = 0;
 
+volatile int grados1 = 0;
+volatile int grados2 = 0;
+volatile int grados3 = 0;
+
 volatile bool flagPulsoIncremento = FALSE;
 volatile bool flagPulsoInicio = FALSE;
 
@@ -71,10 +74,18 @@ void setup(){
 
   lcd.init();
   lcd.backlight();
+  //Mensaje de bienvenida
   lcd.setCursor(0, 0);
-  lcd.print("Esto funciona");
-  delay(1000);
+  lcd.print("  Bienvenido a  ");
+  lcd.setCursor(0, 1);
+  lcd.print("  Super Guanti  ");
+  delay(1000);  
   lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Una creacion de:");
+  lcd.setCursor(0, 1);
+  lcd.print("     M.A.L.     ");
+  delay(1000);
 
   pinMode(incremento, INPUT);
   pinMode(inicio, INPUT);
@@ -83,9 +94,14 @@ void setup(){
   pinMode(clockPin, OUTPUT);
   pinMode(dataPin, OUTPUT);
 
-  pinMode(servo1, OUTPUT);
-  pinMode(servo2, OUTPUT);
-  pinMode(servo3, OUTPUT);
+  miservo_1.attach(9, 350, 2900); //servo base, derecha-izquierda
+  miservo_1.write(grados1); 
+
+  miservo_2.attach(6, 1000, 2000); //servo de la derecha, adelante-atras
+  miservo_2.write(grados2); 
+
+  miservo_3.attach(11, 1000, 2000); //servo de la izqueirda, abajo
+  miservo_3.write(grados3);
 
   //Sin estas lineas hay un led que empieza encendido, copiar esto tmb al final del programa
   digitalWrite(pinLatch, LOW);              
@@ -183,21 +199,61 @@ void loop(){
       estadoPrograma = 3;
     }
 
-    if (Serial.available()) { 
-    
+    if (Serial.available()){
+
       estadoBluetooth = Serial.read(); 
-      if(estadoBluetooth == '1' || estadoBluetooth == '2'){
-        digitalWrite(servo1, HIGH);
+
+      ///SERVO 1 -- DERECHA IZQUIERDA -- 9///
+      if(estadoBluetooth == '1'){
+        grados1++;
+        if(grados1 >= 180){
+          grados1 = 180;
+        }
+        
+        miservo_1.write(grados1, 0);
         
       }
-      if(estadoBluetooth == '3' || estadoBluetooth == '4'){
-        digitalWrite(servo2, HIGH);
+      if(estadoBluetooth == '2'){
+        grados1--; 
+        if(grados1 <= 0){
+          grados1 = 0;
+        }
+        
+        miservo_1.write(grados1, 0);
         
       }
-      if(estadoBluetooth == '5'){
-        digitalWrite(servo3, HIGH);
+
+      ///SERVO 2 -- ADELANTE ATRAS -- 6///
+      if(estadoBluetooth == '3'){
+        grados2++;
+        if(grados2 >= 180){
+          grados2 == 180;
+        }
+        
+        miservo_2.write(grados2, 200);
         
       }
+      if(estadoBluetooth == '4'){
+        grados2--;
+        if(grados2 >= 0){
+          grados2 == 0;
+        }
+        
+        miservo_2.write(grados2, 200);
+        
+      }
+
+      ///SERVO 3 -- ABAJO -- 11///
+      if(estadoBluetooth == '5'){    
+        grados3--;        
+        if(grados3<=0){
+          grados3 = 90;
+        }
+          
+        miservo_3.write(grados3, 0);
+        
+      }  
+    }
     }
   break;
   case 3:
