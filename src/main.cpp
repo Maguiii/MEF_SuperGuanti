@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <LiquidCrystal_I2C.h>
 #include <Servo.h>
-#include <TimerOne.h>//hay que usar timer 2 (mirar ejemplo en la carpeta de miranda)
+#include <TimerOne.h>
 #include <Wire.h>
 /* 
   Retencion de inicio para pulsadores inicio e incremento MEF
@@ -46,17 +46,17 @@ volatile int tmin = 0;
 volatile int tseg = 0;
 volatile int thora = 0;
 
-volatile byte estadoPrograma = 1;
-volatile byte estadoRetencionIncremento = 1;
-volatile byte estadoRetencionInicio = 1;
-volatile byte estadoInfras = 0;
-volatile byte estadoLcd = 0;
-volatile byte estadoBluetooth = 0;
+volatile int estadoPrograma = 1;
+volatile int estadoRetencionIncremento = 1;
+volatile int estadoRetencionInicio = 1;
+volatile int estadoInfras = 0;
+volatile int estadoLcd = 0;
+volatile int estadoBluetooth = 0;
 
-volatile byte numViajes = 0;
-volatile byte contadorViajes = 0;
-volatile byte aleatorio = 0;
-volatile byte numAnterior = 0;
+volatile int numViajes = 0;
+volatile int contadorViajes = 0;
+volatile int aleatorio = 0;
+volatile int numAnterior = 0;
 
 int grados1 = 0;
 int grados2 = 0;
@@ -70,6 +70,7 @@ void actualizarLcd();
 void juego();
 
 void setup(){
+  //Inicializacion del Timer2
   cli(); 
   TCCR2A = 0; 
   TCCR2B = 0; 
@@ -121,10 +122,11 @@ void setup(){
   shiftOut(dataPin, clockPin, MSBFIRST, 0); 
   digitalWrite(pinLatch, HIGH);
 }
-ISR(TIMER2_COMPA_vect){ //esta funcion se interrumpe cada 1ms
-//4:30 salida del arduino
-//4:26 cronometro
 
+ISR(TIMER2_COMPA_vect){ 
+/* Esta funcion se interrumpe cada 32.77us
+   La cuenta no es exacta. Salida ejemplo: 4:30(salida arduino) 4:26(cronometro)
+*/
   tauxmili++;
   if (tauxmili >= 30) {
     tIncremento++;
@@ -148,6 +150,7 @@ ISR(TIMER2_COMPA_vect){ //esta funcion se interrumpe cada 1ms
     }
   } 
 }
+
 void loop(){
   
   actualizarLcd();
@@ -310,6 +313,7 @@ void loop(){
     break;
   }
 }
+
 void actualizarLcd(){
   /* En esta MEF estan agrupadas todas las salidas en pantalla con sus respectivas condiciones  
    * para cambiar de estado
@@ -376,6 +380,7 @@ void actualizarLcd(){
     break;
   }
 }
+
 void juego(){
   /* En esta funcion se cambia el led que esta encendido, con la condicion de que no se prenda dos veces el mismo
    * Esta funcion es llamada cuando se detecta como valido un viaje  
