@@ -59,7 +59,7 @@ volatile byte numAnterior = 0;
 
 volatile int grados1 = 0;
 volatile int grados2 = 0;
-volatile int grados3 = 110;
+volatile int grados3 = 90;
 
 volatile bool flagPulsoIncremento = FALSE;
 volatile bool flagPulsoInicio = FALSE;
@@ -212,9 +212,6 @@ void loop(){
           }
           miservo_1.write(grados1); //,0 para velocidad 
         }
-        if(estadoBluetooth == '2'){
-          miservo_1.write(grados1); 
-        }
 
         if(estadoBluetooth == '3'){
           grados1--;
@@ -222,9 +219,6 @@ void loop(){
             grados1 = 0;
           }
           miservo_1.write(grados1);
-        }
-        if(estadoBluetooth == '4'){
-          miservo_1.write(grados1); 
         }
         ///SERVO 2 -- ADELANTE ATRAS -- 6///
         if(estadoBluetooth == '5'){
@@ -234,9 +228,6 @@ void loop(){
           }
           miservo_2.write(grados2);
         }
-        if(estadoBluetooth == '6'){
-          miservo_2.write(grados2); //,170 para la velocidad
-        }
 
         if(estadoBluetooth == '7'){
           grados2--;
@@ -244,9 +235,6 @@ void loop(){
             grados2 = 0;
           }
           miservo_2.write(grados2);
-        }
-        if(estadoBluetooth == '8'){
-          miservo_2.write(grados2); 
         }
         ///SERVO 3 -- ABAJO -- 11///
         if(estadoBluetooth == '9'){    
