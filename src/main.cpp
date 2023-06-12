@@ -10,7 +10,7 @@
   Con la deteccion de los viajes se cambia el led
   Al cambiar el led se esperan instrucciones para la grua 
 
-  Probar codigo con las instrucciones reales de la grua
+  Probar con la grua
   Pensar bien como es el final del programa
 
   Agregar accesorios al final, ej contador de pulsaciones por dedo
@@ -40,6 +40,7 @@ volatile int tIncremento = 0;
 volatile int tInicio = 0;
 volatile int tInfras = 0;
 volatile int taux = 0;
+volatile int tauxmili = 0;
 volatile int tlcd = 0;
 volatile int tmin = 0;
 volatile int tseg = 0;
@@ -57,19 +58,29 @@ volatile byte contadorViajes = 0;
 volatile byte aleatorio = 0;
 volatile byte numAnterior = 0;
 
-volatile int grados1 = 0;
-volatile int grados2 = 0;
-volatile int grados3 = 90;
+int grados1 = 0;
+int grados2 = 0;
+int grados3 = 90;
 
-volatile bool flagPulsoIncremento = FALSE;
-volatile bool flagPulsoInicio = FALSE;
+bool flagPulsoIncremento = FALSE;
+bool flagPulsoInicio = FALSE;
 
 
-void tiempo();
 void actualizarLcd();
 void juego();
 
 void setup(){
+  cli(); 
+  TCCR2A = 0; 
+  TCCR2B = 0; 
+  TCNT2 = 0;  
+
+  OCR2A = 255; 
+  TCCR2A |= (1 << WGM21);
+  TCCR2B |= (0b00000111); //1024 (preescala)
+  TIMSK2 |= (1 << OCIE2A);
+  sei(); 
+
   Serial.begin(57600); 
 
   miservo_1.attach(9, 350, 2900); //servo base, derecha-izquierda
@@ -96,6 +107,7 @@ void setup(){
   lcd.setCursor(0, 1);
   lcd.print("     M.A.L.     ");
   delay(1000);
+  lcd.clear();
 
   pinMode(incremento, INPUT);
   pinMode(inicio, INPUT);
@@ -108,11 +120,34 @@ void setup(){
   digitalWrite(pinLatch, LOW);              
   shiftOut(dataPin, clockPin, MSBFIRST, 0); 
   digitalWrite(pinLatch, HIGH);
-
-  Timer1.initialize(1000);//1ms
-  Timer1.attachInterrupt(tiempo);
 }
+ISR(TIMER2_COMPA_vect){ //esta funcion se interrumpe cada 1ms
+//4:30 salida del arduino
+//4:26 cronometro
 
+  tauxmili++;
+  if (tauxmili >= 30) {
+    tIncremento++;
+    tInicio++;
+    taux++;
+    
+    if(taux >= 60){
+      tlcd--;
+      taux = 0;
+      if(estadoLcd == 2){
+        tseg++;
+        if(tseg >= 60){
+          tmin++;
+          tseg = 0;
+          if(tmin >= 60){
+            thora++;
+            tmin = 0;
+          }
+        }
+      }
+    }
+  } 
+}
 void loop(){
   
   actualizarLcd();
@@ -127,7 +162,7 @@ void loop(){
           flagPulsoIncremento = FALSE;
 
           if(digitalRead(incremento) == HIGH)
-            estadoRetencionIncremento = 1;
+            estadoRetencionIncremento = 2;
 
           if(digitalRead(incremento) == LOW){
             tIncremento = 0;
@@ -135,9 +170,9 @@ void loop(){
           }
         break;
         case 2:
-          if(tIncremento < 100)
+          if(tIncremento < 30)
             estadoRetencionIncremento = 2;
-          if(tIncremento >= 100)
+          if(tIncremento >= 30)
             estadoRetencionIncremento = 3;
         break;
         case 3: 
@@ -164,9 +199,9 @@ void loop(){
           }
         break;
         case 2:
-          if(tInicio < 100)
+          if(tInicio < 30)
             estadoRetencionInicio = 2;
-          if(tInicio >= 100)
+          if(tInicio >= 30)
             estadoRetencionInicio = 3;
         break;
         case 3: 
@@ -275,36 +310,6 @@ void loop(){
     break;
   }
 }
-
-
-void tiempo(){
-  /*Esta funcion cuenta cada 1ms 
-   * tIncremento y tInicio se utilizan para la retencion de los pulsadores
-   * taux se utiliza para contar cada 1seg
-   * Luego esa misma se usa para la cuanta regresiva con tlcd y para la cuenta general del programa con tseg, tmin y thora
-  */
-  tIncremento++;
-  tInicio++;
-  taux++;
-  
-  if(taux >= 1000){
-    tlcd--;
-    taux = 0;
-
-    if(estadoLcd == 2){
-      tseg++;
-      if(tseg >= 60){
-        tmin++;
-        tseg = 00;
-        if(tmin >= 60){
-          thora++;
-          tmin = 00;
-        }
-      }
-    }
-  }
-}
-
 void actualizarLcd(){
   /* En esta MEF estan agrupadas todas las salidas en pantalla con sus respectivas condiciones  
    * para cambiar de estado
