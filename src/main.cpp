@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <LiquidCrystal_I2C.h>
-#include <VarSpeedServo.h>
-#include <TimerOne.h>
+#include <Servo.h>
+#include <TimerOne.h>//hay que usar timer 2 (mirar ejemplo en la carpeta de miranda)
 #include <Wire.h>
 /* 
   Retencion de inicio para pulsadores inicio e incremento MEF
@@ -32,7 +32,7 @@
 #define clockPin 8 
 #define dataPin 5  
 
-VarSpeedServo miservo_1, miservo_2, miservo_3;
+Servo miservo_1, miservo_2, miservo_3;
 
 LiquidCrystal_I2C lcd(0x3F, 16, 2);
 
@@ -59,7 +59,7 @@ volatile byte numAnterior = 0;
 
 volatile int grados1 = 0;
 volatile int grados2 = 0;
-volatile int grados3 = 0;
+volatile int grados3 = 110;
 
 volatile bool flagPulsoIncremento = FALSE;
 volatile bool flagPulsoInicio = FALSE;
@@ -71,6 +71,16 @@ void juego();
 
 void setup(){
   Serial.begin(57600); 
+
+  miservo_1.attach(9, 350, 2900); //servo base, derecha-izquierda
+  miservo_1.write(grados1); 
+
+  miservo_2.attach(6, 1000, 2000); //servo de la derecha, adelante-atras
+  miservo_2.write(grados2); 
+
+  miservo_3.attach(11, 1000, 2000); //servo de la izqueirda, abajo
+  miservo_3.write(grados3);
+  delay(500);
 
   lcd.init();
   lcd.backlight();
@@ -94,15 +104,6 @@ void setup(){
   pinMode(clockPin, OUTPUT);
   pinMode(dataPin, OUTPUT);
 
-  miservo_1.attach(9, 350, 2900); //servo base, derecha-izquierda
-  miservo_1.write(grados1); 
-
-  miservo_2.attach(6, 1000, 2000); //servo de la derecha, adelante-atras
-  miservo_2.write(grados2); 
-
-  miservo_3.attach(11, 1000, 2000); //servo de la izqueirda, abajo
-  miservo_3.write(grados3);
-
   //Sin estas lineas hay un led que empieza encendido, copiar esto tmb al final del programa
   digitalWrite(pinLatch, LOW);              
   shiftOut(dataPin, clockPin, MSBFIRST, 0); 
@@ -117,174 +118,176 @@ void loop(){
   actualizarLcd();
 
   switch(estadoPrograma){
-  case 1:
-  /* En este caso se hace la eleccion de la cantidad de viajes a realizar y se da inicio al juego
-   * Las MEF son para la retencion de los pulsadores de incremento de viajes y de inicio 
-  */
-    switch(estadoRetencionIncremento){
-      case 1:
-        flagPulsoIncremento = FALSE;
-
-        if(digitalRead(incremento) == HIGH)
-          estadoRetencionIncremento = 1;
-
-        if(digitalRead(incremento) == LOW){
-          tIncremento = 0;
-          estadoRetencionIncremento = 2;
-        }
-      break;
-      case 2:
-        if(tIncremento < 100)
-          estadoRetencionIncremento = 2;
-        if(tIncremento >= 100)
-          estadoRetencionIncremento = 3;
-      break;
-      case 3: 
-        if(digitalRead(incremento) == LOW){
-          flagPulsoIncremento  = TRUE;
-          estadoRetencionIncremento  = 1;
-        }
-        else{
-          flagPulsoIncremento = FALSE;
-          estadoRetencionIncremento = 1;
-        }
-      break;
-    }
-    switch(estadoRetencionInicio){
-      case 1:
-        flagPulsoInicio = FALSE;
-
-        if(digitalRead(inicio) == HIGH)
-          estadoRetencionInicio = 1;
-
-        if(digitalRead(inicio) == LOW){
-          tInicio = 0;
-          estadoRetencionInicio = 2;
-        }
-      break;
-      case 2:
-        if(tInicio < 100)
-          estadoRetencionInicio = 2;
-        if(tInicio >= 100)
-          estadoRetencionInicio = 3;
-      break;
-      case 3: 
-        if(digitalRead(inicio) == LOW){
-          flagPulsoInicio = TRUE;
-          estadoRetencionInicio = 1;
-        }
-        else{
-          flagPulsoInicio = FALSE;
-          estadoRetencionInicio = 1;
-        }
-      break;
-    }
-    /*Si el pulsador verdaderamente esta presionado, se incrementa una vez la variable*/
-    if(flagPulsoIncremento == TRUE){
-      numViajes++;
-    }
-    if(estadoLcd == 2){ //condicion para salir de este estado, le puse esta para no repetir la condicion del estado del lcd
-      juego(); //llamo para encender el primer led
-      estadoPrograma = 2;
-      tmin = 0;
-      tseg = 0;
-      thora = 0;
-    }
-  break;
-  case 2:
-    /*Cuando se detecta algun infra se va al sig estado del programa donde se cuentan bien la cantidad de viajes 
-      Despues de contar la cantidad de viajes, se llama a la funcion juego, la cual despues de prender el sig led viene a este estado de programa
+    case 1:
+    /* En este caso se hace la eleccion de la cantidad de viajes a realizar y se da inicio al juego
+    * Las MEF son para la retencion de los pulsadores de incremento de viajes y de inicio 
     */
-    if(digitalRead(infra1) == LOW || digitalRead(infra2) == LOW || digitalRead(infra3) == LOW || digitalRead(infra4) == LOW || digitalRead(infra5) == LOW){
-      estadoPrograma = 3;
-    }
+      switch(estadoRetencionIncremento){
+        case 1:
+          flagPulsoIncremento = FALSE;
 
-    if (Serial.available()){
+          if(digitalRead(incremento) == HIGH)
+            estadoRetencionIncremento = 1;
 
-      estadoBluetooth = Serial.read(); 
-
-      ///SERVO 1 -- DERECHA IZQUIERDA -- 9///
-      if(estadoBluetooth == '1'){
-        grados1++;
-        if(grados1 >= 180){
-          grados1 = 180;
-        }
-        
-        miservo_1.write(grados1, 0);
-        
+          if(digitalRead(incremento) == LOW){
+            tIncremento = 0;
+            estadoRetencionIncremento = 2;
+          }
+        break;
+        case 2:
+          if(tIncremento < 100)
+            estadoRetencionIncremento = 2;
+          if(tIncremento >= 100)
+            estadoRetencionIncremento = 3;
+        break;
+        case 3: 
+          if(digitalRead(incremento) == LOW){
+            flagPulsoIncremento  = TRUE;
+            estadoRetencionIncremento  = 1;
+          }
+          else{
+            flagPulsoIncremento = FALSE;
+            estadoRetencionIncremento = 1;
+          }
+        break;
       }
-      if(estadoBluetooth == '2'){
-        grados1--; 
-        if(grados1 <= 0){
-          grados1 = 0;
-        }
-        
-        miservo_1.write(grados1, 0);
-        
+      switch(estadoRetencionInicio){
+        case 1:
+          flagPulsoInicio = FALSE;
+
+          if(digitalRead(inicio) == HIGH)
+            estadoRetencionInicio = 1;
+
+          if(digitalRead(inicio) == LOW){
+            tInicio = 0;
+            estadoRetencionInicio = 2;
+          }
+        break;
+        case 2:
+          if(tInicio < 100)
+            estadoRetencionInicio = 2;
+          if(tInicio >= 100)
+            estadoRetencionInicio = 3;
+        break;
+        case 3: 
+          if(digitalRead(inicio) == LOW){
+            flagPulsoInicio = TRUE;
+            estadoRetencionInicio = 1;
+          }
+          else{
+            flagPulsoInicio = FALSE;
+            estadoRetencionInicio = 1;
+          }
+        break;
+      }
+      /*Si el pulsador verdaderamente esta presionado, se incrementa una vez la variable*/
+      if(flagPulsoIncremento == TRUE){
+        numViajes++;
+      }
+      if(estadoLcd == 2){ //condicion para salir de este estado, le puse esta para no repetir la condicion del estado del lcd
+        juego(); //llamo para encender el primer led
+        estadoPrograma = 2;
+        tmin = 0;
+        tseg = 0;
+        thora = 0;
+      }
+    break;
+    case 2:
+      /*Cuando se detecta algun infra se va al sig estado del programa donde se cuentan bien la cantidad de viajes 
+        Despues de contar la cantidad de viajes, se llama a la funcion juego, la cual despues de prender el sig led viene a este estado de programa
+      */
+      if(digitalRead(infra1) == LOW || digitalRead(infra2) == LOW || digitalRead(infra3) == LOW || digitalRead(infra4) == LOW || digitalRead(infra5) == LOW){
+        estadoPrograma = 3;
       }
 
-      ///SERVO 2 -- ADELANTE ATRAS -- 6///
-      if(estadoBluetooth == '3'){
-        grados2++;
-        if(grados2 >= 180){
-          grados2 == 180;
-        }
-        
-        miservo_2.write(grados2, 200);
-        
-      }
-      if(estadoBluetooth == '4'){
-        grados2--;
-        if(grados2 >= 0){
-          grados2 == 0;
-        }
-        
-        miservo_2.write(grados2, 200);
-        
-      }
+      if (Serial.available()){
 
-      ///SERVO 3 -- ABAJO -- 11///
-      if(estadoBluetooth == '5'){    
-        grados3--;        
-        if(grados3<=0){
-          grados3 = 90;
+        estadoBluetooth = Serial.read(); 
+
+        ///SERVO 1 -- DERECHA IZQUIERDA -- 9/// COPIAR ESTO PARA TODAS LAS INSTRUCCIONES DE SERVO
+        if(estadoBluetooth == '1'){
+          grados1++;
+          if(grados1 >= 180){
+            grados1 = 180;
+          }
+          miservo_1.write(grados1); //,0 para velocidad 
         }
-          
-        miservo_3.write(grados3, 0);
-        
-      }  
-    }
-    }
-  break;
-  case 3:
-  /*  Se detectan los viajes 
-   *  La deteccion se produce cuando los infra cambian de estado, es decir que un viaje
-   *  se considera valido cuando el bloque se levanta de la plataforma
-  */
-    switch (estadoInfras)
-    {
-      case 0:
-        if(digitalRead(infra1) == HIGH && digitalRead(infra2) == HIGH && digitalRead(infra3) == HIGH && digitalRead(infra4) == HIGH && digitalRead(infra5) == HIGH){
-          estadoInfras = 0;
+        if(estadoBluetooth == '2'){
+          miservo_1.write(grados1); 
         }
-        if(digitalRead(infra1) == LOW || digitalRead(infra2) == LOW || digitalRead(infra3) == LOW || digitalRead(infra4) == LOW || digitalRead(infra5) == LOW){
-          estadoInfras = 1;
+
+        if(estadoBluetooth == '3'){
+          grados1--;
+          if(grados1 <= 0){
+            grados1 = 0;
+          }
+          miservo_1.write(grados1);
         }
-      break;
-      case 1:
-        if(digitalRead(infra1) == LOW || digitalRead(infra2) == LOW || digitalRead(infra3) == LOW || digitalRead(infra4) == LOW || digitalRead(infra5) == LOW){
-          estadoInfras = 1;
+        if(estadoBluetooth == '4'){
+          miservo_1.write(grados1); 
         }
-        if(digitalRead(infra1) == HIGH && digitalRead(infra2) == HIGH && digitalRead(infra3) == HIGH && digitalRead(infra4) == HIGH && digitalRead(infra5) == HIGH){
-          contadorViajes++;
-          juego();
-          estadoInfras = 0;
+        ///SERVO 2 -- ADELANTE ATRAS -- 6///
+        if(estadoBluetooth == '5'){
+          grados2++;
+          if(grados2 >= 180){
+            grados2 = 180;
+          }
+          miservo_2.write(grados2);
         }
-      break;
-    }
-  break;
+        if(estadoBluetooth == '6'){
+          miservo_2.write(grados2); //,170 para la velocidad
+        }
+
+        if(estadoBluetooth == '7'){
+          grados2--;
+          if(grados2 <= 0){
+            grados2 = 0;
+          }
+          miservo_2.write(grados2);
+        }
+        if(estadoBluetooth == '8'){
+          miservo_2.write(grados2); 
+        }
+        ///SERVO 3 -- ABAJO -- 11///
+        if(estadoBluetooth == '9'){    
+          grados3--;        
+          if(grados3<=0){
+            grados3 = 90;
+          }
+          miservo_3.write(grados3);
+        }  
+      }
+    break;
+    case 3:
+    /*  Se detectan los viajes 
+    *  La deteccion se produce cuando los infra cambian de estado, es decir que un viaje
+    *  se considera valido cuando el bloque se levanta de la plataforma
+    */
+      switch (estadoInfras)
+      {
+        case 0:
+          if(digitalRead(infra1) == HIGH && digitalRead(infra2) == HIGH && digitalRead(infra3) == HIGH && digitalRead(infra4) == HIGH && digitalRead(infra5) == HIGH){
+            estadoInfras = 0;
+          }
+          if(digitalRead(infra1) == LOW || digitalRead(infra2) == LOW || digitalRead(infra3) == LOW || digitalRead(infra4) == LOW || digitalRead(infra5) == LOW){
+            estadoInfras = 1;
+          }
+        break;
+        case 1:
+          if(digitalRead(infra1) == LOW || digitalRead(infra2) == LOW || digitalRead(infra3) == LOW || digitalRead(infra4) == LOW || digitalRead(infra5) == LOW){
+            estadoInfras = 1;
+          }
+          if(digitalRead(infra1) == HIGH && digitalRead(infra2) == HIGH && digitalRead(infra3) == HIGH && digitalRead(infra4) == HIGH && digitalRead(infra5) == HIGH){
+            contadorViajes++;
+            juego();
+            estadoInfras = 0;
+          }
+        break;
+      }
+    break;
   }
 }
+
 
 void tiempo(){
   /*Esta funcion cuenta cada 1ms 
