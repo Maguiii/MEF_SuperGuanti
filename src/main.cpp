@@ -4,16 +4,16 @@
 #include <TimerOne.h>
 #include <Wire.h>
 /* 
-  Retencion de inicio para pulsadores inicio e incremento MEF
-  Pantalla lcd funcionando con todos los mensajes         MEF
-  Deteccion de los cambios de estado de los infras        MEF
+  Retencion de inicio para pulsadores inicio e incremento 
+  Pantalla lcd funcionando con todos los mensajes         
+  Deteccion de los cambios de estado de los infras        
   Con la deteccion de los viajes se cambia el led
   Al cambiar el led se esperan instrucciones para la grua 
+  Programa en bucle (al finalizar el juego se puede volver a empezar)
 
   Probar con la grua
-  Pensar bien como es el final del programa
 
-  Agregar accesorios al final, ej contador de pulsaciones por dedo
+  Agregar contador de pulsaciones por dedo
 */
 
 #define FALSE 0
@@ -66,7 +66,8 @@ int pulgar = 0;
 
 int grados1 = 0;
 int grados2 = 0;
-int grados3 = 90;
+int grados3 = 9
+0;
 
 bool flagPulsoIncremento = FALSE;
 bool flagPulsoInicio = FALSE;
@@ -227,6 +228,13 @@ void loop(){
 
         estadoBluetooth = Serial.read(); 
 
+        ///CONDICION 0 CUANDO NO SE ESTA PULSANDO NADA ///
+        if(estadoBluetooth == '0'){
+          miservo_1.write(grados1);
+          miservo_2.write(grados2);
+          miservo_3.write(grados3);
+        }
+
         ///SERVO 1 -- DERECHA IZQUIERDA -- 9///
         if(estadoBluetooth == '1'){
           grados1++;
@@ -274,9 +282,7 @@ void loop(){
     *  La deteccion se produce cuando los infra cambian de estado, es decir que un viaje
     *  se considera valido cuando el bloque se levanta de la plataforma
     */
-      if(estadoLcd == 3) //si se llego a la cant de viajes requeridos se cambia de estados
-        estadoPrograma = 4; 
-
+      
       switch (estadoInfras)
       {
         case 0:
@@ -293,7 +299,9 @@ void loop(){
           }
           if(digitalRead(infra1) == HIGH && digitalRead(infra2) == HIGH && digitalRead(infra3) == HIGH && digitalRead(infra4) == HIGH && digitalRead(infra5) == HIGH){
             contadorViajes++;
-            juego();
+            if(estadoLcd == 2){
+              juego();
+            }
             estadoInfras = 0;
           }
         break;
