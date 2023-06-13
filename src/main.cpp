@@ -71,7 +71,7 @@ int grados3 = 90;
 bool flagPulsoIncremento = FALSE;
 bool flagPulsoInicio = FALSE;
 bool flagMensajeFinal = FALSE;
-
+bool flagHabilitacionInicio = FALSE;
 
 void actualizarLcd();
 void juego();
@@ -156,7 +156,7 @@ ISR(TIMER2_COMPA_vect){
         }
       }
     }
-    tauxmili = 0; //esto no estaba antes no esta probado
+    //tauxmili = 0; //esto no estaba antes no esta probado
   } 
 }
 
@@ -182,9 +182,9 @@ void loop(){
           }
         break;
         case 2:
-          if(tIncremento < 30)
+          if(tIncremento < 20)
             estadoRetencionIncremento = 2;
-          if(tIncremento >= 30)
+          if(tIncremento >= 20)
             estadoRetencionIncremento = 3;
         break;
         case 3: 
@@ -200,9 +200,12 @@ void loop(){
       }
       retencionInicio(); //probar si esto funciona antes el switch estaba aca
       
-      /*Si el pulsador verdaderamente esta presionado, se incrementa una vez la variable*/
+      /*Si el pulsador verdaderamente esta presionado, se incrementa una vez la variable
+        Se puede dar inicio al juego luego de haber seleccionado minimo un viaje, entonces se habilita el boton inicio
+      */
       if(flagPulsoIncremento == TRUE){
         numViajes++;
+        flagHabilitacionInicio = TRUE;
       }
       if(estadoLcd == 2){ //condicion para salir de este estado, le puse esta para no repetir la condicion del estado del lcd
         juego(); //llamo para encender el primer led
@@ -224,7 +227,7 @@ void loop(){
 
         estadoBluetooth = Serial.read(); 
 
-        ///SERVO 1 -- DERECHA IZQUIERDA -- 9/// COPIAR ESTO PARA TODAS LAS INSTRUCCIONES DE SERVO
+        ///SERVO 1 -- DERECHA IZQUIERDA -- 9///
         if(estadoBluetooth == '1'){
           grados1++;
           if(grados1 >= 180){
@@ -271,8 +274,8 @@ void loop(){
     *  La deteccion se produce cuando los infra cambian de estado, es decir que un viaje
     *  se considera valido cuando el bloque se levanta de la plataforma
     */
-      if(estadoLcd == 3) //se llego a la cant de viajes requeridos
-        estadoPrograma = 4; //condicion para salir de este estado
+      if(estadoLcd == 3) //si se llego a la cant de viajes requeridos se cambia de estados
+        estadoPrograma = 4; 
 
       switch (estadoInfras)
       {
@@ -297,25 +300,22 @@ void loop(){
       }
     break;
     case 4:
-      if(estadoLcd == 5){
-        retencionInicio();
-        if(flagPulsoInicio == TRUE){
+    /*En este estado se entra desde la condicion anterior y desde las condiciones del lcd al llegar al ultimo caso
+      Se reinician todas las varibles definidas en el inicio   
+      La variable flagHabilitacionInicio se desactiva para volver a ingresar la cantidad de viajes que se quieren
+    */
+      tmin = 0;
+      tseg = 0;
+      thora = 0;
 
-          tmin = 0;
-          tseg = 0;
-          thora = 0;
+      numViajes = 0;
+      contadorViajes = 0;
+      aleatorio = 0;
+      numAnterior = 0;
 
-          numViajes = 0;
-          contadorViajes = 0;
-          aleatorio = 0;
-          numAnterior = 0;
-
-          estadoLcd = 0;
-
-          estadoPrograma = 1;
-        }
-      }
-      
+      estadoLcd = 0;
+      flagHabilitacionInicio = FALSE;
+      estadoPrograma = 1;
     break;
   }
 }
@@ -332,12 +332,12 @@ void actualizarLcd(){
       lcd.setCursor(0,1);
       lcd.print(numViajes);
 
-      if(flagPulsoInicio == FALSE){
-        estadoLcd = 0;
-      }
-      else{
+      if(flagPulsoInicio == TRUE && flagHabilitacionInicio == TRUE){ //se cambia de estado si esta habilitado el boton inicio, es decir que ya hay viajes seleccionados
         tlcd = 5;
         estadoLcd = 1;
+      }
+      else{
+        estadoLcd = 0;
       }
     break;
     case 1:
@@ -367,7 +367,8 @@ void actualizarLcd(){
       if(contadorViajes != numViajes)
         estadoLcd = 2;
       else{
-        tlcd = 10;
+        tlcd = 5;//este tiempo es corto porque se estan haciendo pruebas, despues se puede modificar
+        lcd.clear();
         estadoLcd = 3;
       }
         
@@ -383,11 +384,13 @@ void actualizarLcd(){
       lcd.print(tseg);
 
       if(tlcd <= 0){
+        tlcd = 5;
+        lcd.clear();
         estadoLcd = 4;
-        tlcd = 10;
       }
     break;
     case 4:
+    /*Por ahora aca se muestra todo en cero, falta desarrollar la suma de estas variables*/
       lcd.setCursor(0,0);
       lcd.print("1:");
       lcd.print(menique);
@@ -402,8 +405,9 @@ void actualizarLcd(){
       lcd.print(mayor);
 
       if(tlcd <= 0){
-        estadoLcd = 5;
         tlcd = 10;
+        lcd.clear();
+        estadoLcd = 5;
       }
     break;
     case 5:
@@ -411,6 +415,12 @@ void actualizarLcd(){
       lcd.print(" Para reiniciar ");
       lcd.setCursor(0,1);
       lcd.print("presionar inicio");
+
+      retencionInicio();
+      if(flagPulsoInicio == TRUE){
+        lcd.clear();
+        estadoPrograma = 4;
+      }
     break;
   }
 }
@@ -477,9 +487,9 @@ void retencionInicio(){
       }
     break;
     case 2:
-      if(tInicio < 30)
+      if(tInicio < 7)
         estadoRetencionInicio = 2;
-      if(tInicio >= 30)
+      if(tInicio >= 7)
         estadoRetencionInicio = 3;
     break;
     case 3: 
