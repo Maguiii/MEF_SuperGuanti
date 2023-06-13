@@ -9,9 +9,8 @@
   Deteccion de los cambios de estado de los infras        
   Con la deteccion de los viajes se cambia el led
   Al cambiar el led se esperan instrucciones para la grua 
+  FUNCIONA LA GRUA!!!!!!
   Programa en bucle (al finalizar el juego se puede volver a empezar)
-
-  Probar con la grua
 
   Agregar contador de pulsaciones por dedo
 */
