@@ -66,8 +66,7 @@ int pulgar = 0;
 
 int grados1 = 0;
 int grados2 = 0;
-int grados3 = 9
-0;
+int grados3 = 90;
 
 bool flagPulsoIncremento = FALSE;
 bool flagPulsoInicio = FALSE;
@@ -227,13 +226,6 @@ void loop(){
       if (Serial.available()){
 
         estadoBluetooth = Serial.read(); 
-
-        ///CONDICION 0 CUANDO NO SE ESTA PULSANDO NADA ///
-        if(estadoBluetooth == '0'){
-          miservo_1.write(grados1);
-          miservo_2.write(grados2);
-          miservo_3.write(grados3);
-        }
 
         ///SERVO 1 -- DERECHA IZQUIERDA -- 9///
         if(estadoBluetooth == '1'){
