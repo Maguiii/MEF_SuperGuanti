@@ -36,27 +36,33 @@ Servo miservo_1, miservo_2, miservo_3;
 
 LiquidCrystal_I2C lcd(0x3F, 16, 2);
 
-volatile int tIncremento = 0;
-volatile int tInicio = 0;
-volatile int tInfras = 0;
-volatile int taux = 0;
-volatile int tauxmili = 0;
-volatile int tlcd = 0;
-volatile int tmin = 0;
-volatile int tseg = 0;
-volatile int thora = 0;
+int tIncremento = 0;
+int tInicio = 0;
+int tInfras = 0;
+int taux = 0;
+int tauxmili = 0;
+int tlcd = 0;
+int tmin = 0;
+int tseg = 0;
+int thora = 0;
 
-volatile int estadoPrograma = 1;
-volatile int estadoRetencionIncremento = 1;
-volatile int estadoRetencionInicio = 1;
-volatile int estadoInfras = 0;
-volatile int estadoLcd = 0;
-volatile int estadoBluetooth = 0;
+int estadoPrograma = 1;
+int estadoRetencionIncremento = 1;
+int estadoRetencionInicio = 1;
+int estadoInfras = 0;
+int estadoLcd = 0;
+int estadoBluetooth = 0;
 
-volatile int numViajes = 0;
-volatile int contadorViajes = 0;
-volatile int aleatorio = 0;
-volatile int numAnterior = 0;
+int numViajes = 0;
+int contadorViajes = 0;
+int aleatorio = 0;
+int numAnterior = 0;
+
+int menique = 0;
+int indice = 0;
+int anular = 0;
+int mayor = 0;
+int pulgar = 0;
 
 int grados1 = 0;
 int grados2 = 0;
@@ -64,10 +70,12 @@ int grados3 = 90;
 
 bool flagPulsoIncremento = FALSE;
 bool flagPulsoInicio = FALSE;
+bool flagMensajeFinal = FALSE;
 
 
 void actualizarLcd();
 void juego();
+void retencionInicio();
 
 void setup(){
   //Inicializacion del Timer2
@@ -148,6 +156,7 @@ ISR(TIMER2_COMPA_vect){
         }
       }
     }
+    tauxmili = 0; //esto no estaba antes no esta probado
   } 
 }
 
@@ -189,35 +198,8 @@ void loop(){
           }
         break;
       }
-      switch(estadoRetencionInicio){
-        case 1:
-          flagPulsoInicio = FALSE;
-
-          if(digitalRead(inicio) == HIGH)
-            estadoRetencionInicio = 1;
-
-          if(digitalRead(inicio) == LOW){
-            tInicio = 0;
-            estadoRetencionInicio = 2;
-          }
-        break;
-        case 2:
-          if(tInicio < 30)
-            estadoRetencionInicio = 2;
-          if(tInicio >= 30)
-            estadoRetencionInicio = 3;
-        break;
-        case 3: 
-          if(digitalRead(inicio) == LOW){
-            flagPulsoInicio = TRUE;
-            estadoRetencionInicio = 1;
-          }
-          else{
-            flagPulsoInicio = FALSE;
-            estadoRetencionInicio = 1;
-          }
-        break;
-      }
+      retencionInicio(); //probar si esto funciona antes el switch estaba aca
+      
       /*Si el pulsador verdaderamente esta presionado, se incrementa una vez la variable*/
       if(flagPulsoIncremento == TRUE){
         numViajes++;
@@ -289,6 +271,9 @@ void loop(){
     *  La deteccion se produce cuando los infra cambian de estado, es decir que un viaje
     *  se considera valido cuando el bloque se levanta de la plataforma
     */
+      if(estadoLcd == 3) //se llego a la cant de viajes requeridos
+        estadoPrograma = 4; //condicion para salir de este estado
+
       switch (estadoInfras)
       {
         case 0:
@@ -310,6 +295,27 @@ void loop(){
           }
         break;
       }
+    break;
+    case 4:
+      if(estadoLcd == 5){
+        retencionInicio();
+        if(flagPulsoInicio == TRUE){
+
+          tmin = 0;
+          tseg = 0;
+          thora = 0;
+
+          numViajes = 0;
+          contadorViajes = 0;
+          aleatorio = 0;
+          numAnterior = 0;
+
+          estadoLcd = 0;
+
+          estadoPrograma = 1;
+        }
+      }
+      
     break;
   }
 }
@@ -360,8 +366,11 @@ void actualizarLcd(){
 
       if(contadorViajes != numViajes)
         estadoLcd = 2;
-      else
+      else{
+        tlcd = 10;
         estadoLcd = 3;
+      }
+        
     break;
     case 3:
       lcd.setCursor(0, 0);
@@ -373,10 +382,35 @@ void actualizarLcd(){
       lcd.print(":");
       lcd.print(tseg);
 
-      // if(finMensajeFinal == FALSE) //esta flag se usaria para demostrar que se termino de imprimir el mensaje final
-      //   estadoLcd = 4;
-      // else
-      //   estadoLcd = 1;
+      if(tlcd <= 0){
+        estadoLcd = 4;
+        tlcd = 10;
+      }
+    break;
+    case 4:
+      lcd.setCursor(0,0);
+      lcd.print("1:");
+      lcd.print(menique);
+      lcd.print(" 2:");
+      lcd.print(indice);
+      lcd.print(" 3:");
+      lcd.print(pulgar);
+      lcd.setCursor(0, 1);
+      lcd.print("4:");
+      lcd.print(anular);
+      lcd.print(" 5:");
+      lcd.print(mayor);
+
+      if(tlcd <= 0){
+        estadoLcd = 5;
+        tlcd = 10;
+      }
+    break;
+    case 5:
+      lcd.setCursor(0,0);
+      lcd.print(" Para reiniciar ");
+      lcd.setCursor(0,1);
+      lcd.print("presionar inicio");
     break;
   }
 }
@@ -426,6 +460,37 @@ void juego(){
       digitalWrite(pinLatch, HIGH);
       numAnterior = 4;
       estadoPrograma = 2;
+    break;
+  }
+}
+void retencionInicio(){
+  switch(estadoRetencionInicio){
+    case 1:
+      flagPulsoInicio = FALSE;
+
+      if(digitalRead(inicio) == HIGH)
+        estadoRetencionInicio = 1;
+
+      if(digitalRead(inicio) == LOW){
+        tInicio = 0;
+        estadoRetencionInicio = 2;
+      }
+    break;
+    case 2:
+      if(tInicio < 30)
+        estadoRetencionInicio = 2;
+      if(tInicio >= 30)
+        estadoRetencionInicio = 3;
+    break;
+    case 3: 
+      if(digitalRead(inicio) == LOW){
+        flagPulsoInicio = TRUE;
+        estadoRetencionInicio = 1;
+      }
+      else{
+        flagPulsoInicio = FALSE;
+        estadoRetencionInicio = 1;
+      }
     break;
   }
 }
