@@ -76,6 +76,7 @@ void actualizarLcd();
 void juego();
 void retencionInicio();
 void grua();
+void apagarLeds();
 
 void setup(){
   //Inicializacion del Timer2
@@ -102,6 +103,8 @@ void setup(){
   miservo_3.write(grados3);
   delay(500);
 
+  apagarLeds();
+
   lcd.init();
   lcd.backlight();
   //Mensaje de bienvenida
@@ -124,11 +127,6 @@ void setup(){
   pinMode(pinLatch, OUTPUT);
   pinMode(clockPin, OUTPUT);
   pinMode(dataPin, OUTPUT);
-
-  //Sin estas lineas hay un led que empieza encendido, copiar esto tmb al final del programa
-  digitalWrite(pinLatch, LOW);              
-  shiftOut(dataPin, clockPin, MSBFIRST, 0); 
-  digitalWrite(pinLatch, HIGH);
 }
 
 ISR(TIMER2_COMPA_vect){ 
@@ -163,12 +161,14 @@ ISR(TIMER2_COMPA_vect){
 void loop(){
   
   actualizarLcd();
-
+  
   switch(estadoPrograma){
     case 1:
     /* En este caso se hace la eleccion de la cantidad de viajes a realizar y se da inicio al juego
     * Las MEF son para la retencion de los pulsadores de incremento de viajes y de inicio 
     */
+      apagarLeds();
+
       switch(estadoRetencionIncremento){
         case 1:
           flagPulsoIncremento = FALSE;
@@ -335,6 +335,8 @@ void actualizarLcd(){
         
     break;
     case 3:
+      apagarLeds();
+      
       lcd.setCursor(0, 0);
       lcd.print("  Felicidades!  ");
       lcd.setCursor(4, 1);
@@ -509,4 +511,9 @@ void grua(){
     }
     miservo_3.write(grados3);
   }  
+}
+void apagarLeds(){
+  digitalWrite(pinLatch, LOW);              
+  shiftOut(dataPin, clockPin, MSBFIRST, 0); 
+  digitalWrite(pinLatch, HIGH);
 }
