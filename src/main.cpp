@@ -216,8 +216,8 @@ void loop(){
       }
     break;
     case 2:
-      /*Cuando se detecta algun infra se va al sig estado del programa donde se cuentan bien la cantidad de viajes 
-        Despues de contar la cantidad de viajes, se llama a la funcion juego, la cual despues de prender el sig led viene a este estado de programa
+      /* Si se reciben datos por bluetooth se llama a la grua
+       * Al detectar que se pulso un infra se avanza al siguiente estado
       */
       if(digitalRead(infra1) == LOW || digitalRead(infra2) == LOW || digitalRead(infra3) == LOW || digitalRead(infra4) == LOW || digitalRead(infra5) == LOW){
         estadoPrograma = 3;
@@ -228,37 +228,23 @@ void loop(){
       }
     break;
     case 3:
-    /*  Se detectan los viajes 
-    *  La deteccion se produce cuando los infra cambian de estado, es decir que un viaje
-    *  se considera valido cuando el bloque se levanta de la plataforma
+    /* Cuando el infra deja de detectar se cuenta como un viaje
+    *  Mientras el infra este activado se llama a la grua para poder levantar el bloque
+    *  Mientras el lcd diga A JUGAR se llama a la funcion juego para prender el sig led
     */
       
-      // switch (estadoInfras)
-      // {
-      //   case 0:
-      //     if(digitalRead(infra1) == HIGH && digitalRead(infra2) == HIGH && digitalRead(infra3) == HIGH && digitalRead(infra4) == HIGH && digitalRead(infra5) == HIGH){
-      //       estadoInfras = 0;
-      //     }
-      //     if(digitalRead(infra1) == LOW || digitalRead(infra2) == LOW || digitalRead(infra3) == LOW || digitalRead(infra4) == LOW || digitalRead(infra5) == LOW){
-      //       estadoInfras = 1;
-      //     }
-      //   break;
-      //   case 1:
-          if(digitalRead(infra1) == LOW || digitalRead(infra2) == LOW || digitalRead(infra3) == LOW || digitalRead(infra4) == LOW || digitalRead(infra5) == LOW){
-            estadoPrograma = 3;
-            grua();
-          }
-          if(digitalRead(infra1) == HIGH && digitalRead(infra2) == HIGH && digitalRead(infra3) == HIGH && digitalRead(infra4) == HIGH && digitalRead(infra5) == HIGH){
-            contadorViajes++;
-            if(estadoLcd == 2){
-              juego();
-            }
-            estadoPrograma = 2;
-          }
-      //   break;
+      if(digitalRead(infra1) == LOW || digitalRead(infra2) == LOW || digitalRead(infra3) == LOW || digitalRead(infra4) == LOW || digitalRead(infra5) == LOW){
+        estadoPrograma = 3;
+        grua();
+      }
+      if(digitalRead(infra1) == HIGH && digitalRead(infra2) == HIGH && digitalRead(infra3) == HIGH && digitalRead(infra4) == HIGH && digitalRead(infra5) == HIGH){
+        contadorViajes++;
+        if(estadoLcd == 2){
+          juego();
+        }
+        estadoPrograma = 2;
+      }
 
-
-      // }
     break;
     case 4:
     /*En este estado se entra desde la condicion anterior y desde las condiciones del lcd al llegar al ultimo caso
@@ -336,7 +322,7 @@ void actualizarLcd(){
     break;
     case 3:
       apagarLeds();
-      
+
       lcd.setCursor(0, 0);
       lcd.print("  Felicidades!  ");
       lcd.setCursor(4, 1);
