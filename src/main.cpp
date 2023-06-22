@@ -65,7 +65,7 @@ int pulgar = 0;
 
 int grados1 = 0;
 int grados2 = 0;
-int grados3 = 90;
+int grados3 = 60;
 
 bool flagPulsoIncremento = FALSE;
 bool flagPulsoInicio = FALSE;
@@ -75,6 +75,7 @@ bool flagHabilitacionInicio = FALSE;
 void actualizarLcd();
 void juego();
 void retencionInicio();
+void grua();
 
 void setup(){
   //Inicializacion del Timer2
@@ -173,7 +174,7 @@ void loop(){
           flagPulsoIncremento = FALSE;
 
           if(digitalRead(incremento) == HIGH)
-            estadoRetencionIncremento = 2;
+            estadoRetencionIncremento = 1;
 
           if(digitalRead(incremento) == LOW){
             tIncremento = 0;
@@ -223,49 +224,7 @@ void loop(){
       }
 
       if (Serial.available()){
-
-        estadoBluetooth = Serial.read(); 
-
-        ///SERVO 1 -- DERECHA IZQUIERDA -- 9///
-        if(estadoBluetooth == '1'){
-          grados1++;
-          if(grados1 >= 180){
-            grados1 = 180;
-          }
-          miservo_1.write(grados1); //,0 para velocidad 
-        }
-
-        if(estadoBluetooth == '3'){
-          grados1--;
-          if(grados1 <= 0){
-            grados1 = 0;
-          }
-          miservo_1.write(grados1);
-        }
-        ///SERVO 2 -- ADELANTE ATRAS -- 6///
-        if(estadoBluetooth == '5'){
-          grados2++;
-          if(grados2 >= 180){
-            grados2 = 180;
-          }
-          miservo_2.write(grados2);
-        }
-
-        if(estadoBluetooth == '7'){
-          grados2--;
-          if(grados2 <= 0){
-            grados2 = 0;
-          }
-          miservo_2.write(grados2);
-        }
-        ///SERVO 3 -- ABAJO -- 11///
-        if(estadoBluetooth == '9'){    
-          grados3--;        
-          if(grados3<=0){
-            grados3 = 90;
-          }
-          miservo_3.write(grados3);
-        }  
+        grua();
       }
     break;
     case 3:
@@ -274,29 +233,32 @@ void loop(){
     *  se considera valido cuando el bloque se levanta de la plataforma
     */
       
-      switch (estadoInfras)
-      {
-        case 0:
-          if(digitalRead(infra1) == HIGH && digitalRead(infra2) == HIGH && digitalRead(infra3) == HIGH && digitalRead(infra4) == HIGH && digitalRead(infra5) == HIGH){
-            estadoInfras = 0;
-          }
+      // switch (estadoInfras)
+      // {
+      //   case 0:
+      //     if(digitalRead(infra1) == HIGH && digitalRead(infra2) == HIGH && digitalRead(infra3) == HIGH && digitalRead(infra4) == HIGH && digitalRead(infra5) == HIGH){
+      //       estadoInfras = 0;
+      //     }
+      //     if(digitalRead(infra1) == LOW || digitalRead(infra2) == LOW || digitalRead(infra3) == LOW || digitalRead(infra4) == LOW || digitalRead(infra5) == LOW){
+      //       estadoInfras = 1;
+      //     }
+      //   break;
+      //   case 1:
           if(digitalRead(infra1) == LOW || digitalRead(infra2) == LOW || digitalRead(infra3) == LOW || digitalRead(infra4) == LOW || digitalRead(infra5) == LOW){
-            estadoInfras = 1;
-          }
-        break;
-        case 1:
-          if(digitalRead(infra1) == LOW || digitalRead(infra2) == LOW || digitalRead(infra3) == LOW || digitalRead(infra4) == LOW || digitalRead(infra5) == LOW){
-            estadoInfras = 1;
+            estadoPrograma = 3;
+            grua();
           }
           if(digitalRead(infra1) == HIGH && digitalRead(infra2) == HIGH && digitalRead(infra3) == HIGH && digitalRead(infra4) == HIGH && digitalRead(infra5) == HIGH){
             contadorViajes++;
             if(estadoLcd == 2){
               juego();
             }
-            estadoInfras = 0;
+            estadoPrograma = 2;
           }
-        break;
-      }
+      //   break;
+
+
+      // }
     break;
     case 4:
     /*En este estado se entra desde la condicion anterior y desde las condiciones del lcd al llegar al ultimo caso
@@ -502,4 +464,49 @@ void retencionInicio(){
       }
     break;
   }
+}
+void grua(){
+  estadoBluetooth = Serial.read(); 
+
+  ///SERVO 1 -- DERECHA IZQUIERDA -- 9///
+  if(estadoBluetooth == '1'){
+    grados1 = grados1 + 3;
+    if(grados1 >= 180){
+      grados1 = 180;
+    }
+    miservo_1.write(grados1); //,0 para velocidad 
+  }
+
+  if(estadoBluetooth == '3'){
+    grados1 = grados1 - 3;
+    if(grados1 <= 0){
+      grados1 = 0;
+    }
+    miservo_1.write(grados1);
+  }
+
+  ///SERVO 2 -- ADELANTE ATRAS -- 6///
+  if(estadoBluetooth == '5'){
+    grados2 = grados2 + 3;
+    if(grados2 >= 180){
+      grados2 = 180;
+    }
+    miservo_2.write(grados2);
+  }
+
+  if(estadoBluetooth == '7'){
+    grados2 = grados2 - 4;
+    if(grados2 <= 0){
+      grados2 = 0;
+    }
+    miservo_2.write(grados2);
+  }
+  ///SERVO 3 -- ABAJO -- 11///
+  if(estadoBluetooth == '9'){    
+    grados3 = grados3 - 3;        
+    if(grados3<=0){
+      grados3 = 90;
+    }
+    miservo_3.write(grados3);
+  }  
 }
