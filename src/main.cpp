@@ -5,31 +5,34 @@
 #include <Wire.h>
 /* 
   Retencion de inicio para pulsadores inicio e incremento 
-  Pantalla lcd funcionando con todos los mensajes         
+  Pantalla lcd funcionando con todos los mensajes    
   Deteccion de los cambios de estado de los infras        
   Con la deteccion de los viajes se cambia el led
-  Al cambiar el led se esperan instrucciones para la grua 
-  FUNCIONA LA GRUA!!!!!!
+  Al cambiar el led se esperan instrucciones para la grua
+  La grua funciona mientras los infras estan detectando
+  La grua funciona con mejor velocidad
   Programa en bucle (al finalizar el juego se puede volver a empezar)
 
   Agregar contador de pulsaciones por dedo
+
+  Los pines estan declarados para funcionar en la plaqueta
 */
 
 #define FALSE 0
 #define TRUE 1
 
-#define incremento 10
-#define inicio 12
+#define incremento 13 //10
+#define inicio A0 //12
 
-#define infra1 4
-#define infra2 A3
-#define infra3 A2
-#define infra4 A1
-#define infra5 A0
-
-#define pinLatch 7  // 74hc595
-#define clockPin 8 
-#define dataPin 5  
+#define infra1 11 //4
+#define infra2 12 //A3
+#define infra3 A1 //A2
+#define infra4 A2 //A1
+#define infra5 A3 //A0
+// 74hc595
+#define pinLatch 9 //7  
+#define clockPin 10 //8 
+#define dataPin 8 //5  
 
 Servo miservo_1, miservo_2, miservo_3;
 
@@ -48,7 +51,6 @@ int thora = 0;
 int estadoPrograma = 1;
 int estadoRetencionIncremento = 1;
 int estadoRetencionInicio = 1;
-int estadoInfras = 0;
 int estadoLcd = 0;
 int estadoBluetooth = 0;
 
@@ -69,13 +71,12 @@ int grados3 = 60;
 
 bool flagPulsoIncremento = FALSE;
 bool flagPulsoInicio = FALSE;
-bool flagMensajeFinal = FALSE;
 bool flagHabilitacionInicio = FALSE;
 
 void actualizarLcd();
 void juego();
-void retencionInicio();
 void grua();
+void retencionInicio();
 void apagarLeds();
 
 void setup(){
@@ -93,13 +94,13 @@ void setup(){
 
   Serial.begin(57600); 
 
-  miservo_1.attach(9, 350, 2900); //servo base, derecha-izquierda
+  miservo_1.attach(3, 350, 2900); //servo base, derecha-izquierda (9)
   miservo_1.write(grados1); 
 
-  miservo_2.attach(6, 1000, 2000); //servo de la derecha, adelante-atras
+  miservo_2.attach(5, 1000, 2000); //servo de la derecha, adelante-atras (6)
   miservo_2.write(grados2); 
 
-  miservo_3.attach(11, 1000, 2000); //servo de la izqueirda, abajo
+  miservo_3.attach(6, 1000, 2000); //servo de la izqueirda, abajo (11)
   miservo_3.write(grados3);
   delay(500);
 
@@ -154,7 +155,6 @@ ISR(TIMER2_COMPA_vect){
         }
       }
     }
-    //tauxmili = 0; //esto no estaba antes no esta probado
   } 
 }
 
@@ -198,7 +198,7 @@ void loop(){
           }
         break;
       }
-      retencionInicio(); //probar si esto funciona antes el switch estaba aca
+      retencionInicio(); //la mef para la retencion del pulsador inicio se llama varias veces en el programa
       
       /*Si el pulsador verdaderamente esta presionado, se incrementa una vez la variable
         Se puede dar inicio al juego luego de haber seleccionado minimo un viaje, entonces se habilita el boton inicio
@@ -216,15 +216,15 @@ void loop(){
       }
     break;
     case 2:
-      /* Si se reciben datos por bluetooth se llama a la grua
-       * Al detectar que se pulso un infra se avanza al siguiente estado
-      */
-      if(digitalRead(infra1) == LOW || digitalRead(infra2) == LOW || digitalRead(infra3) == LOW || digitalRead(infra4) == LOW || digitalRead(infra5) == LOW){
-        estadoPrograma = 3;
+    /* Si se reciben datos por bluetooth se llama a la grua
+      * Al detectar que se pulso un infra se avanza al siguiente estado
+    */
+      if(Serial.available()){
+        grua();
       }
 
-      if (Serial.available()){
-        grua();
+      if(digitalRead(infra1) == LOW || digitalRead(infra2) == LOW || digitalRead(infra3) == LOW || digitalRead(infra4) == LOW || digitalRead(infra5) == LOW){
+        estadoPrograma = 3;
       }
     break;
     case 3:
@@ -244,7 +244,6 @@ void loop(){
         }
         estadoPrograma = 2;
       }
-
     break;
     case 4:
     /*En este estado se entra desde la condicion anterior y desde las condiciones del lcd al llegar al ultimo caso
@@ -279,7 +278,7 @@ void actualizarLcd(){
       lcd.setCursor(0,1);
       lcd.print(numViajes);
 
-      if(flagPulsoInicio == TRUE && flagHabilitacionInicio == TRUE){ //se cambia de estado si esta habilitado el boton inicio, es decir que ya hay viajes seleccionados
+      if(flagPulsoInicio == TRUE && flagHabilitacionInicio == TRUE){ //se cambia de estado si ya hay viajes seleccionados
         tlcd = 5;
         estadoLcd = 1;
       }
@@ -379,10 +378,10 @@ void actualizarLcd(){
 }
 
 void juego(){
-  /* En esta funcion se cambia el led que esta encendido, con la condicion de que no se prenda dos veces el mismo
-   * Esta funcion es llamada cuando se detecta como valido un viaje  
-   * Luego de encender el led se va al estadoPrograma 2 donde se reciben instrucciones para la grua
-   */
+/* En esta funcion se cambia el led que esta encendido, con la condicion de que no se prenda dos veces el mismo
+  * Esta funcion es llamada cuando se detecta como valido un viaje  
+  * Luego de encender el led se va al estadoPrograma 2 donde se reciben instrucciones para la grua
+  */
   while(aleatorio == numAnterior){
     aleatorio = random(0, 5);
   }
@@ -426,37 +425,7 @@ void juego(){
     break;
   }
 }
-void retencionInicio(){
-  switch(estadoRetencionInicio){
-    case 1:
-      flagPulsoInicio = FALSE;
 
-      if(digitalRead(inicio) == HIGH)
-        estadoRetencionInicio = 1;
-
-      if(digitalRead(inicio) == LOW){
-        tInicio = 0;
-        estadoRetencionInicio = 2;
-      }
-    break;
-    case 2:
-      if(tInicio < 7)
-        estadoRetencionInicio = 2;
-      if(tInicio >= 7)
-        estadoRetencionInicio = 3;
-    break;
-    case 3: 
-      if(digitalRead(inicio) == LOW){
-        flagPulsoInicio = TRUE;
-        estadoRetencionInicio = 1;
-      }
-      else{
-        flagPulsoInicio = FALSE;
-        estadoRetencionInicio = 1;
-      }
-    break;
-  }
-}
 void grua(){
   estadoBluetooth = Serial.read(); 
 
@@ -502,6 +471,39 @@ void grua(){
     miservo_3.write(grados3);
   }  
 }
+
+void retencionInicio(){
+  switch(estadoRetencionInicio){
+    case 1:
+      flagPulsoInicio = FALSE;
+
+      if(digitalRead(inicio) == HIGH)
+        estadoRetencionInicio = 1;
+
+      if(digitalRead(inicio) == LOW){
+        tInicio = 0;
+        estadoRetencionInicio = 2;
+      }
+    break;
+    case 2:
+      if(tInicio < 7)
+        estadoRetencionInicio = 2;
+      if(tInicio >= 7)
+        estadoRetencionInicio = 3;
+    break;
+    case 3: 
+      if(digitalRead(inicio) == LOW){
+        flagPulsoInicio = TRUE;
+        estadoRetencionInicio = 1;
+      }
+      else{
+        flagPulsoInicio = FALSE;
+        estadoRetencionInicio = 1;
+      }
+    break;
+  }
+}
+
 void apagarLeds(){
   digitalWrite(pinLatch, LOW);              
   shiftOut(dataPin, clockPin, MSBFIRST, 0); 
