@@ -13,6 +13,9 @@
   La grua funciona con mejor velocidad
   Programa en bucle (al finalizar el juego se puede volver a empezar)
 
+  Cambios en las instrucciones de la grua (ahora se reciben cadenas no caracteres)
+  NO ESTA PROBADO QUE FUNCIONE
+
   Agregar contador de pulsaciones por dedo
 
   Los pines estan declarados para funcionar en la plaqueta
@@ -52,7 +55,6 @@ int estadoPrograma = 1;
 int estadoRetencionIncremento = 1;
 int estadoRetencionInicio = 1;
 int estadoLcd = 0;
-int estadoBluetooth = 0;
 
 int numViajes = 0;
 int contadorViajes = 0;
@@ -423,10 +425,10 @@ void juego(){
 }
 
 void grua(){
-  estadoBluetooth = Serial.read(); 
+  String estadoBluetooth = Serial.readString(); 
 
   ///SERVO 1 -- DERECHA IZQUIERDA -- 9///
-  if(estadoBluetooth == '1'){
+  if(estadoBluetooth == "derecha"){
     grados1 = grados1 + 3;
     if(grados1 >= 180){
       grados1 = 180;
@@ -434,7 +436,7 @@ void grua(){
     miservo_1.write(grados1); //,0 para velocidad 
   }
 
-  if(estadoBluetooth == '3'){
+  if(estadoBluetooth == "izquierda"){
     grados1 = grados1 - 3;
     if(grados1 <= 0){
       grados1 = 0;
@@ -443,7 +445,7 @@ void grua(){
   }
 
   ///SERVO 2 -- ADELANTE ATRAS -- 6///
-  if(estadoBluetooth == '5'){
+  if(estadoBluetooth == "adelante"){
     grados2 = grados2 + 3;
     if(grados2 >= 180){
       grados2 = 180;
@@ -451,7 +453,7 @@ void grua(){
     miservo_2.write(grados2);
   }
 
-  if(estadoBluetooth == '7'){
+  if(estadoBluetooth == "atras"){
     grados2 = grados2 - 4;
     if(grados2 <= 0){
       grados2 = 0;
@@ -459,7 +461,7 @@ void grua(){
     miservo_2.write(grados2);
   }
   ///SERVO 3 -- ABAJO -- 11///
-  if(estadoBluetooth == '9'){    
+  if(estadoBluetooth == "abajo"){    
     grados3 = grados3 - 3;        
     if(grados3<=0){
       grados3 = 90;
