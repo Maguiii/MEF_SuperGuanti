@@ -343,6 +343,10 @@ void actualizarLcd(){
     /*Por ahora aca se muestra todo en cero, falta desarrollar la suma de estas variables*/
       lcd.setCursor(0,0);
       lcd.print("1:");
+
+      if(Serial.available()){
+        menique = Serial.read(contmenique);
+      }
       lcd.print(menique);
       lcd.print(" 2:");
       lcd.print(indice);
