@@ -3,6 +3,8 @@
 #include <Servo.h>
 #include <TimerOne.h>
 #include <Wire.h>
+#include <SoftwareSerial.h>
+
 /* 
   Retencion de inicio para pulsadores inicio e incremento 
   Pantalla lcd funcionando con todos los mensajes    
@@ -12,10 +14,10 @@
   La grua funciona mientras los infras estan detectando
   La grua funciona con mejor velocidad
   Programa en bucle (al finalizar el juego se puede volver a empezar)
-
-  Cambios en las instrucciones de la grua (ahora se reciben cadenas no caracteres)
-  NO ESTA PROBADO QUE FUNCIONE
-
+  
+  Utiliza la libreria SofwareSerial (no esta chekeado que funcione con velocidad)
+  Todo lo declarado como Serial ahora se llama Bluetooth
+  
   Agregar contador de pulsaciones por dedo
 
   Los pines estan declarados para funcionar en la plaqueta
@@ -24,22 +26,24 @@
 #define FALSE 0
 #define TRUE 1
 
-#define incremento 13 //10
-#define inicio A0 //12
+#define incremento 13 
+#define inicio A0 
 
-#define infra1 11 //4
-#define infra2 12 //A3
-#define infra3 A1 //A2
-#define infra4 A2 //A1
-#define infra5 A3 //A0
+#define infra1 11 
+#define infra2 12 
+#define infra3 A1 
+#define infra4 A2 
+#define infra5 A3 
 // 74hc595
-#define pinLatch 9 //7  
-#define clockPin 10 //8 
-#define dataPin 8 //5  
+#define pinLatch 9   
+#define clockPin 10 
+#define dataPin 8  
 
 Servo miservo_1, miservo_2, miservo_3;
 
 LiquidCrystal_I2C lcd(0x3F, 16, 2);
+
+SoftwareSerial Bluetooth(2, 4); //rx, tx
 
 int tIncremento = 0;
 int tInicio = 0;
@@ -94,7 +98,7 @@ void setup(){
   TIMSK2 |= (1 << OCIE2A);
   sei(); 
 
-  Serial.begin(57600); 
+  Bluetooth.begin(57600); 
 
   miservo_1.attach(3, 350, 2900); //servo base, derecha-izquierda (9)
   miservo_1.write(grados1); 
@@ -425,10 +429,10 @@ void juego(){
 }
 
 void grua(){
-  String estadoBluetooth = Serial.readString(); 
+  byte estadoBluetooth = Bluetooth.read(); 
 
-  ///SERVO 1 -- DERECHA IZQUIERDA -- 9///
-  if(estadoBluetooth == "derecha"){
+  ///SERVO 1 -- DERECHA IZQUIERDA -- 3///
+  if(estadoBluetooth == '1'){
     grados1 = grados1 + 3;
     if(grados1 >= 180){
       grados1 = 180;
@@ -436,7 +440,7 @@ void grua(){
     miservo_1.write(grados1); //,0 para velocidad 
   }
 
-  if(estadoBluetooth == "izquierda"){
+  if(estadoBluetooth == '3'){
     grados1 = grados1 - 3;
     if(grados1 <= 0){
       grados1 = 0;
@@ -444,8 +448,8 @@ void grua(){
     miservo_1.write(grados1);
   }
 
-  ///SERVO 2 -- ADELANTE ATRAS -- 6///
-  if(estadoBluetooth == "adelante"){
+  ///SERVO 2 -- ADELANTE ATRAS -- 5///
+  if(estadoBluetooth == '5'){
     grados2 = grados2 + 3;
     if(grados2 >= 180){
       grados2 = 180;
@@ -453,15 +457,15 @@ void grua(){
     miservo_2.write(grados2);
   }
 
-  if(estadoBluetooth == "atras"){
+  if(estadoBluetooth == '7'){
     grados2 = grados2 - 4;
     if(grados2 <= 0){
       grados2 = 0;
     }
     miservo_2.write(grados2);
   }
-  ///SERVO 3 -- ABAJO -- 11///
-  if(estadoBluetooth == "abajo"){    
+  ///SERVO 3 -- ABAJO -- 6///
+  if(estadoBluetooth == '9'){    
     grados3 = grados3 - 3;        
     if(grados3<=0){
       grados3 = 90;
