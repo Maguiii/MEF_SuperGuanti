@@ -19,6 +19,7 @@
   Todo lo declarado como Serial ahora se llama Bluetooth
   
   Agregar contador de pulsaciones por dedo
+  Disminuir el tiempo de retencion del boton cant viajes (incremento)
 
   Los pines estan declarados para funcionar en la plaqueta
 */
@@ -179,10 +180,10 @@ void loop(){
         case 1:
           flagPulsoIncremento = FALSE;
 
-          if(digitalRead(incremento) == HIGH)
+          if(digitalRead(incremento) == LOW)
             estadoRetencionIncremento = 1;
 
-          if(digitalRead(incremento) == LOW){
+          if(digitalRead(incremento) == HIGH){
             tIncremento = 0;
             estadoRetencionIncremento = 2;
           }
@@ -194,7 +195,7 @@ void loop(){
             estadoRetencionIncremento = 3;
         break;
         case 3: 
-          if(digitalRead(incremento) == LOW){
+          if(digitalRead(incremento) == HIGH){
             flagPulsoIncremento  = TRUE;
             estadoRetencionIncremento  = 1;
           }
@@ -229,7 +230,7 @@ void loop(){
         grua();
       }
 
-      if(digitalRead(infra1) == LOW || digitalRead(infra2) == LOW || digitalRead(infra3) == LOW || digitalRead(infra4) == LOW || digitalRead(infra5) == LOW){
+      if(digitalRead(infra1) == HIGH || digitalRead(infra2) == HIGH || digitalRead(infra3) == HIGH || digitalRead(infra4) == HIGH || digitalRead(infra5) == HIGH){
         estadoPrograma = 3;
       }
     break;
@@ -239,11 +240,11 @@ void loop(){
     *  Mientras el lcd diga A JUGAR se llama a la funcion juego para prender el sig led
     */
       
-      if(digitalRead(infra1) == LOW || digitalRead(infra2) == LOW || digitalRead(infra3) == LOW || digitalRead(infra4) == LOW || digitalRead(infra5) == LOW){
+      if(digitalRead(infra1) == HIGH || digitalRead(infra2) == HIGH || digitalRead(infra3) == HIGH || digitalRead(infra4) == HIGH || digitalRead(infra5) == HIGH){
         estadoPrograma = 3;
         grua();
       }
-      if(digitalRead(infra1) == HIGH && digitalRead(infra2) == HIGH && digitalRead(infra3) == HIGH && digitalRead(infra4) == HIGH && digitalRead(infra5) == HIGH){
+      if(digitalRead(infra1) == LOW && digitalRead(infra2) == LOW && digitalRead(infra3) == LOW && digitalRead(infra4) == LOW && digitalRead(infra5) == LOW){
         contadorViajes++;
         if(estadoLcd == 2){
           juego();
@@ -479,10 +480,10 @@ void retencionInicio(){
     case 1:
       flagPulsoInicio = FALSE;
 
-      if(digitalRead(inicio) == HIGH)
+      if(digitalRead(inicio) == LOW)
         estadoRetencionInicio = 1;
 
-      if(digitalRead(inicio) == LOW){
+      if(digitalRead(inicio) == HIGH){
         tInicio = 0;
         estadoRetencionInicio = 2;
       }
@@ -494,7 +495,7 @@ void retencionInicio(){
         estadoRetencionInicio = 3;
     break;
     case 3: 
-      if(digitalRead(inicio) == LOW){
+      if(digitalRead(inicio) == HIGH){
         flagPulsoInicio = TRUE;
         estadoRetencionInicio = 1;
       }
