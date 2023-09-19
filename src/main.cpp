@@ -15,11 +15,21 @@
   La grua funciona con mejor velocidad
   Programa en bucle (al finalizar el juego se puede volver a empezar)
   
-  Utiliza la libreria SofwareSerial (no esta chekeado que funcione con velocidad)
+  Utiliza la libreria SofwareSerial
+  Anda de a saltitos, se podria modificar un poco cuando se pruebe con la plaqueta del guante
   Todo lo declarado como Serial ahora se llama Bluetooth
   
-  Agregar contador de pulsaciones por dedo
-  Disminuir el tiempo de retencion del boton cant viajes (incremento)
+
+  CAMBIOS 19/09
+  Esta hecha la discriminacion de infras, es decir que se debe activar el infra que este asociado al led prendido
+  para que se cuente como un viaje
+  NO ESTA PROBADO 
+    fijarse si funciona bien la grua
+    si funciona bien la logica usada
+    y si estan bien asociados los leds y los infras
+
+  Se disminuyo el tiempo de retencio del boton incremento
+  NO ESTA PROBADO
 
   Los pines estan declarados para funcionar en la plaqueta
 */
@@ -28,13 +38,22 @@
 #define TRUE 1
 
 #define incremento 13 
-#define inicio A0 
+#define inicio A0 //El que esta mas cercano al pin 1
 
-#define infra1 11 
-#define infra2 12 
-#define infra3 A1 
-#define infra4 A2 
-#define infra5 A3 
+
+/*
+  Aca hay un posible problema que hay que verificar
+
+  Aunque esta armado y chekeado que el led1 esta en la misma caja que el ifra2, no estoy segura que el 74hc05 me tome como led1 al que yo llame led1
+
+  Se podria hacer un programa especial para verificar esto o probar suerte con este programa
+*/
+#define infra1 11  //led5 verde
+#define infra2 12  //led1 amarillo
+#define infra3 A1  //led4 rojo
+#define infra4 A2  //led3 naranja
+#define infra5 A3  //led2 violeta
+
 // 74hc595
 #define pinLatch 9   
 #define clockPin 10 
@@ -55,7 +74,7 @@ int tlcd = 0;
 int tmin = 0;
 int tseg = 0;
 int thora = 0;
-
+ 
 int estadoPrograma = 1;
 int estadoRetencionIncremento = 1;
 int estadoRetencionInicio = 1;
@@ -64,7 +83,7 @@ int estadoLcd = 0;
 int numViajes = 0;
 int contadorViajes = 0;
 int aleatorio = 0;
-int numAnterior = 0;
+int numAnterior = 0; 
 
 int menique = 0;
 int indice = 0;
@@ -76,6 +95,18 @@ int grados1 = 0;
 int grados2 = 0;
 int grados3 = 60;
 
+bool inf1 = FALSE;
+bool inf2 = FALSE;
+bool inf3 = FALSE;
+bool inf4 = FALSE;
+bool inf5 = FALSE;
+
+bool infra1Led5 = FALSE;
+bool infra2Led1 = FALSE;
+bool infra3Led4 = FALSE;
+bool infra4Led3 = FALSE;
+bool infra5Led2 = FALSE;
+
 bool flagPulsoIncremento = FALSE;
 bool flagPulsoInicio = FALSE;
 bool flagHabilitacionInicio = FALSE;
@@ -85,6 +116,7 @@ void juego();
 void grua();
 void retencionInicio();
 void apagarLeds();
+bool estadoInfras();
 
 void setup(){
   //Inicializacion del Timer2
@@ -189,9 +221,9 @@ void loop(){
           }
         break;
         case 2:
-          if(tIncremento < 20)
+          if(tIncremento < 15)//este valor era 15 
             estadoRetencionIncremento = 2;
-          if(tIncremento >= 20)
+          if(tIncremento >= 15)
             estadoRetencionIncremento = 3;
         break;
         case 3: 
@@ -229,27 +261,64 @@ void loop(){
       if(Serial.available()){
         grua();
       }
-
-      if(digitalRead(infra1) == HIGH || digitalRead(infra2) == HIGH || digitalRead(infra3) == HIGH || digitalRead(infra4) == HIGH || digitalRead(infra5) == HIGH){
+      if(estadoInfras())
         estadoPrograma = 3;
-      }
+
     break;
     case 3:
     /* Cuando el infra deja de detectar se cuenta como un viaje
     *  Mientras el infra este activado se llama a la grua para poder levantar el bloque
     *  Mientras el lcd diga A JUGAR se llama a la funcion juego para prender el sig led
     */
-      
-      if(digitalRead(infra1) == HIGH || digitalRead(infra2) == HIGH || digitalRead(infra3) == HIGH || digitalRead(infra4) == HIGH || digitalRead(infra5) == HIGH){
-        estadoPrograma = 3;
+      if(infra1Led5 == TRUE && inf1 == HIGH){
         grua();
-      }
-      if(digitalRead(infra1) == LOW && digitalRead(infra2) == LOW && digitalRead(infra3) == LOW && digitalRead(infra4) == LOW && digitalRead(infra5) == LOW){
-        contadorViajes++;
-        if(estadoLcd == 2){
-          juego();
+        if(digitalRead(infra1) == LOW){
+          contadorViajes++;
+          if(estadoLcd == 2)
+            juego();
+          inf1 = LOW;
+          estadoPrograma = 2;
         }
-        estadoPrograma = 2;
+      }
+      if(infra2Led1 == TRUE && inf2 == HIGH){
+        grua();
+        if(digitalRead(infra2) == LOW){
+          contadorViajes++;
+          if(estadoLcd == 2)
+            juego();
+          inf2 = LOW;
+          estadoPrograma = 2;
+        }
+      }
+      if(infra3Led4 == TRUE && inf3 == HIGH){
+        grua();
+        if(digitalRead(infra3) == LOW){
+          contadorViajes++;
+          if(estadoLcd == 2)
+            juego();
+          inf3 = LOW;
+          estadoPrograma = 2;
+        }
+      }
+      if(infra4Led3 == TRUE && inf4 == HIGH){
+        grua();
+        if(digitalRead(infra4) == LOW){
+          contadorViajes++;
+          if(estadoLcd == 2)
+            juego();
+          inf4 = LOW;
+          estadoPrograma = 2;
+        }
+      }
+      if(infra5Led2 == TRUE && inf5 == HIGH){
+        grua();
+        if(digitalRead(infra5) == LOW){
+          contadorViajes++;
+          if(estadoLcd == 2)
+            juego();
+          inf5 = LOW;
+          estadoPrograma = 2;
+        }
       }
     break;
     case 4:
@@ -384,6 +453,8 @@ void juego(){
 /* En esta funcion se cambia el led que esta encendido, con la condicion de que no se prenda dos veces el mismo
   * Esta funcion es llamada cuando se detecta como valido un viaje  
   * Luego de encender el led se va al estadoPrograma 2 donde se reciben instrucciones para la grua
+  * Cada led tiene asociado un infrarojo y una variable que cambia de valor para indicar que se tiene que detectar un cambio de estado 
+  * en ese infra en particular
   */
   while(aleatorio == numAnterior){
     aleatorio = random(0, 5);
@@ -397,6 +468,7 @@ void juego(){
       digitalWrite(pinLatch, HIGH);
       numAnterior = 0;
       estadoPrograma = 2;
+      infra2Led1 = TRUE;
     break;
     case 1:
       digitalWrite(pinLatch, LOW);              
@@ -404,6 +476,7 @@ void juego(){
       digitalWrite(pinLatch, HIGH);
       numAnterior = 1;
       estadoPrograma = 2;
+      infra5Led2 = TRUE;
     break;
     case 2:
       digitalWrite(pinLatch, LOW);              
@@ -411,20 +484,23 @@ void juego(){
       digitalWrite(pinLatch, HIGH);
       numAnterior = 2;
       estadoPrograma = 2;
+      infra4Led3 = TRUE;
     break;
-    case 3:
+    case 3: 
       digitalWrite(pinLatch, LOW);              
       shiftOut(dataPin, clockPin, MSBFIRST, 8);
       digitalWrite(pinLatch, HIGH);
       numAnterior = 3;
       estadoPrograma = 2;
+      infra3Led4 = TRUE;
     break;
-    case 4:
+    case 4: 
       digitalWrite(pinLatch, LOW);               
       shiftOut(dataPin, clockPin, MSBFIRST, 16); 
       digitalWrite(pinLatch, HIGH);
       numAnterior = 4;
       estadoPrograma = 2;
+      infra1Led5 = TRUE;
     break;
   }
 }
@@ -506,6 +582,33 @@ void retencionInicio(){
     break;
   }
 }
+
+bool estadoInfras(){
+  /*Cada sensor infrarojo tiene asociada una variable que cambia de estado al notar que se activo el infra*/
+  if(digitalRead(infra1) == HIGH){
+    inf1 = TRUE;
+    return TRUE;
+  }
+  if(digitalRead(infra2) == HIGH){
+    inf2 = TRUE;
+    return TRUE;
+  }
+  if(digitalRead(infra3) == HIGH){
+    inf3 = TRUE;
+    return TRUE;
+  }
+  if(digitalRead(infra4) == HIGH){
+    inf4 = TRUE;
+    return TRUE;
+  }
+  if(digitalRead(infra5) == HIGH){
+    inf5 = TRUE;
+    return TRUE;
+  }
+  if(digitalRead(infra1) == LOW && digitalRead(infra2) == LOW && digitalRead(infra3) == LOW && digitalRead(infra4) == LOW && digitalRead(infra5) == LOW)
+    return false;
+}
+
 
 void apagarLeds(){
   digitalWrite(pinLatch, LOW);              
