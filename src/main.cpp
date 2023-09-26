@@ -40,19 +40,11 @@
 #define incremento 13 
 #define inicio A0 //El que esta mas cercano al pin 1
 
-
-/*
-  Aca hay un posible problema que hay que verificar
-
-  Aunque esta armado y chekeado que el led1 esta en la misma caja que el ifra2, no estoy segura que el 74hc05 me tome como led1 al que yo llame led1
-
-  Se podria hacer un programa especial para verificar esto o probar suerte con este programa
-*/
-#define infra1 11  //led5 verde
-#define infra2 12  //led1 amarillo
-#define infra3 A1  //led4 rojo
-#define infra4 A2  //led3 naranja
-#define infra5 A3  //led2 violeta
+#define infra1 12  //led1 amarillo 16
+#define infra2 A3  //led2 violeta 8
+#define infra3 A2  //led3 naranja 4
+#define infra4 A1  //led4 rojo 2
+#define infra5 11  //led5 verde 1
 
 // 74hc595
 #define pinLatch 9   
@@ -80,8 +72,8 @@ int estadoRetencionIncremento = 1;
 int estadoRetencionInicio = 1;
 int estadoLcd = 0;
 
-int numViajes = 0;
-int contadorViajes = 0;
+int viajesSeleccionados = 0;
+int viajesRealizados = 0;
 int aleatorio = 0;
 int numAnterior = 0; 
 
@@ -101,11 +93,11 @@ bool inf3 = FALSE;
 bool inf4 = FALSE;
 bool inf5 = FALSE;
 
-bool infra1Led5 = FALSE;
-bool infra2Led1 = FALSE;
-bool infra3Led4 = FALSE;
-bool infra4Led3 = FALSE;
-bool infra5Led2 = FALSE;
+bool rojo = FALSE;
+bool violeta = FALSE;
+bool verde = FALSE;
+bool amarillo = FALSE;
+bool naranja = FALSE;
 
 bool flagPulsoIncremento = FALSE;
 bool flagPulsoInicio = FALSE;
@@ -167,6 +159,7 @@ void setup(){
   pinMode(pinLatch, OUTPUT);
   pinMode(clockPin, OUTPUT);
   pinMode(dataPin, OUTPUT);
+  
 }
 
 ISR(TIMER2_COMPA_vect){ 
@@ -221,9 +214,9 @@ void loop(){
           }
         break;
         case 2:
-          if(tIncremento < 15)//este valor era 15 
+          if(tIncremento < 7)//este valor era 20
             estadoRetencionIncremento = 2;
-          if(tIncremento >= 15)
+          if(tIncremento >= 7)
             estadoRetencionIncremento = 3;
         break;
         case 3: 
@@ -243,7 +236,7 @@ void loop(){
         Se puede dar inicio al juego luego de haber seleccionado minimo un viaje, entonces se habilita el boton inicio
       */
       if(flagPulsoIncremento == TRUE){
-        numViajes++;
+        viajesSeleccionados++;
         flagHabilitacionInicio = TRUE;
       }
       if(estadoLcd == 2){ //condicion para salir de este estado, le puse esta para no repetir la condicion del estado del lcd
@@ -273,7 +266,7 @@ void loop(){
       if(infra1Led5 == TRUE && inf1 == HIGH){
         grua();
         if(digitalRead(infra1) == LOW){
-          contadorViajes++;
+          viajesRealizados++;
           if(estadoLcd == 2)
             juego();
           inf1 = LOW;
@@ -283,7 +276,7 @@ void loop(){
       if(infra2Led1 == TRUE && inf2 == HIGH){
         grua();
         if(digitalRead(infra2) == LOW){
-          contadorViajes++;
+          viajesRealizados++;
           if(estadoLcd == 2)
             juego();
           inf2 = LOW;
@@ -293,7 +286,7 @@ void loop(){
       if(infra3Led4 == TRUE && inf3 == HIGH){
         grua();
         if(digitalRead(infra3) == LOW){
-          contadorViajes++;
+          viajesRealizados++;
           if(estadoLcd == 2)
             juego();
           inf3 = LOW;
@@ -303,7 +296,7 @@ void loop(){
       if(infra4Led3 == TRUE && inf4 == HIGH){
         grua();
         if(digitalRead(infra4) == LOW){
-          contadorViajes++;
+          viajesRealizados++;
           if(estadoLcd == 2)
             juego();
           inf4 = LOW;
@@ -313,7 +306,7 @@ void loop(){
       if(infra5Led2 == TRUE && inf5 == HIGH){
         grua();
         if(digitalRead(infra5) == LOW){
-          contadorViajes++;
+          viajesRealizados++;
           if(estadoLcd == 2)
             juego();
           inf5 = LOW;
@@ -330,8 +323,8 @@ void loop(){
       tseg = 0;
       thora = 0;
 
-      numViajes = 0;
-      contadorViajes = 0;
+      viajesSeleccionados = 0;
+      viajesRealizados = 0;
       aleatorio = 0;
       numAnterior = 0;
 
@@ -352,7 +345,7 @@ void actualizarLcd(){
       lcd.setCursor(0,0);
       lcd.print("Cant de viajes: ");
       lcd.setCursor(0,1);
-      lcd.print(numViajes);
+      lcd.print(viajesSeleccionados);
 
       if(flagPulsoInicio == TRUE && flagHabilitacionInicio == TRUE){ //se cambia de estado si ya hay viajes seleccionados
         tlcd = 5;
@@ -377,16 +370,14 @@ void actualizarLcd(){
       }
     break;
     case 2:
+      char msg[16] = "";//Funciona para el sprintf (es la memoria para el string)
+
       lcd.setCursor(0, 0);
       lcd.print("    A JUGAR!    ");
       lcd.setCursor(4, 1);
-      lcd.print(thora);
-      lcd.print(":");
-      lcd.print(tmin);
-      lcd.print(":");
-      lcd.print(tseg);
+      lcd.print(sprintf(msg, "%02d:%02d:%02d", thora, tmin, tseg));
 
-      if(contadorViajes != numViajes)
+      if(viajesRealizados != viajesSeleccionados)
         estadoLcd = 2;
       else{
         tlcd = 5;//este tiempo es corto porque se estan haciendo pruebas, despues se puede modificar
@@ -398,43 +389,20 @@ void actualizarLcd(){
     case 3:
       apagarLeds();
 
+      char msg[16] = "";//funciona para el sprintf
+
       lcd.setCursor(0, 0);
       lcd.print("  Felicidades!  ");
       lcd.setCursor(4, 1);
-      lcd.print(thora);
-      lcd.print(":");
-      lcd.print(tmin);
-      lcd.print(":");
-      lcd.print(tseg);
+      lcd.print(sprintf(msg, "%02d:%02d:%02d", thora, tmin, tseg));
 
       if(tlcd <= 0){
-        tlcd = 5;
+        tlcd = 7;
         lcd.clear();
         estadoLcd = 4;
       }
     break;
     case 4:
-    /*Por ahora aca se muestra todo en cero, falta desarrollar la suma de estas variables*/
-      lcd.setCursor(0,0);
-      lcd.print("1:");
-      lcd.print(menique);
-      lcd.print(" 2:");
-      lcd.print(indice);
-      lcd.print(" 3:");
-      lcd.print(pulgar);
-      lcd.setCursor(0, 1);
-      lcd.print("4:");
-      lcd.print(anular);
-      lcd.print(" 5:");
-      lcd.print(mayor);
-
-      if(tlcd <= 0){
-        tlcd = 10;
-        lcd.clear();
-        estadoLcd = 5;
-      }
-    break;
-    case 5:
       lcd.setCursor(0,0);
       lcd.print(" Para reiniciar ");
       lcd.setCursor(0,1);
@@ -468,7 +436,7 @@ void juego(){
       digitalWrite(pinLatch, HIGH);
       numAnterior = 0;
       estadoPrograma = 2;
-      infra2Led1 = TRUE;
+      verde = TRUE;
     break;
     case 1:
       digitalWrite(pinLatch, LOW);              
@@ -476,7 +444,7 @@ void juego(){
       digitalWrite(pinLatch, HIGH);
       numAnterior = 1;
       estadoPrograma = 2;
-      infra5Led2 = TRUE;
+      rojo = TRUE;
     break;
     case 2:
       digitalWrite(pinLatch, LOW);              
@@ -484,7 +452,7 @@ void juego(){
       digitalWrite(pinLatch, HIGH);
       numAnterior = 2;
       estadoPrograma = 2;
-      infra4Led3 = TRUE;
+      naranja = TRUE;
     break;
     case 3: 
       digitalWrite(pinLatch, LOW);              
@@ -492,7 +460,7 @@ void juego(){
       digitalWrite(pinLatch, HIGH);
       numAnterior = 3;
       estadoPrograma = 2;
-      infra3Led4 = TRUE;
+      violeta = TRUE;
     break;
     case 4: 
       digitalWrite(pinLatch, LOW);               
@@ -500,7 +468,7 @@ void juego(){
       digitalWrite(pinLatch, HIGH);
       numAnterior = 4;
       estadoPrograma = 2;
-      infra1Led5 = TRUE;
+      amarillo = TRUE;
     break;
   }
 }
@@ -608,7 +576,6 @@ bool estadoInfras(){
   if(digitalRead(infra1) == LOW && digitalRead(infra2) == LOW && digitalRead(infra3) == LOW && digitalRead(infra4) == LOW && digitalRead(infra5) == LOW)
     return false;
 }
-
 
 void apagarLeds(){
   digitalWrite(pinLatch, LOW);              
