@@ -23,13 +23,16 @@
   CAMBIOS 19/09
   Esta hecha la discriminacion de infras, es decir que se debe activar el infra que este asociado al led prendido
   para que se cuente como un viaje
-  NO ESTA PROBADO 
+
     fijarse si funciona bien la grua
     si funciona bien la logica usada
     y si estan bien asociados los leds y los infras
 
   Se disminuyo el tiempo de retencio del boton incremento
-  NO ESTA PROBADO
+
+
+
+  NO FUNCIONAAAA
 
   Los pines estan declarados para funcionar en la plaqueta
 */
@@ -77,21 +80,9 @@ int viajesRealizados = 0;
 int aleatorio = 0;
 int numAnterior = 0; 
 
-int menique = 0;
-int indice = 0;
-int anular = 0;
-int mayor = 0;
-int pulgar = 0;
-
 int grados1 = 0;
 int grados2 = 0;
 int grados3 = 60;
-
-bool inf1 = FALSE;
-bool inf2 = FALSE;
-bool inf3 = FALSE;
-bool inf4 = FALSE;
-bool inf5 = FALSE;
 
 bool rojo = FALSE;
 bool violeta = FALSE;
@@ -108,7 +99,6 @@ void juego();
 void grua();
 void retencionInicio();
 void apagarLeds();
-bool estadoInfras();
 
 void setup(){
   //Inicializacion del Timer2
@@ -251,65 +241,64 @@ void loop(){
     /* Si se reciben datos por bluetooth se llama a la grua
       * Al detectar que se pulso un infra se avanza al siguiente estado
     */
-      if(Serial.available()){
+      if(Serial.available())
         grua();
-      }
-      if(estadoInfras())
+    
+      if(digitalRead(infra1) == HIGH || digitalRead(infra2) == HIGH || digitalRead(infra3) == HIGH || digitalRead(infra4) == HIGH || digitalRead(infra5) == HIGH)
         estadoPrograma = 3;
-
     break;
     case 3:
     /* Cuando el infra deja de detectar se cuenta como un viaje
     *  Mientras el infra este activado se llama a la grua para poder levantar el bloque
     *  Mientras el lcd diga A JUGAR se llama a la funcion juego para prender el sig led
     */
-      if(infra1Led5 == TRUE && inf1 == HIGH){
+      if(amarillo == TRUE && digitalRead(infra1) == HIGH){
         grua();
         if(digitalRead(infra1) == LOW){
           viajesRealizados++;
           if(estadoLcd == 2)
             juego();
-          inf1 = LOW;
+          amarillo = FALSE;
           estadoPrograma = 2;
         }
       }
-      if(infra2Led1 == TRUE && inf2 == HIGH){
+      if(violeta == TRUE && digitalRead(infra2) == HIGH){
         grua();
         if(digitalRead(infra2) == LOW){
           viajesRealizados++;
           if(estadoLcd == 2)
             juego();
-          inf2 = LOW;
+          violeta = FALSE;
           estadoPrograma = 2;
         }
       }
-      if(infra3Led4 == TRUE && inf3 == HIGH){
+      if(naranja == TRUE && digitalRead(infra3) == HIGH){
         grua();
         if(digitalRead(infra3) == LOW){
           viajesRealizados++;
           if(estadoLcd == 2)
             juego();
-          inf3 = LOW;
+          naranja = FALSE;
           estadoPrograma = 2;
         }
       }
-      if(infra4Led3 == TRUE && inf4 == HIGH){
+      if(rojo == TRUE && digitalRead(infra4) == HIGH){
         grua();
         if(digitalRead(infra4) == LOW){
           viajesRealizados++;
           if(estadoLcd == 2)
             juego();
-          inf4 = LOW;
+          rojo = FALSE;
           estadoPrograma = 2;
         }
       }
-      if(infra5Led2 == TRUE && inf5 == HIGH){
+      if(verde == TRUE && digitalRead(infra5) == HIGH){
         grua();
         if(digitalRead(infra5) == LOW){
           viajesRealizados++;
           if(estadoLcd == 2)
             juego();
-          inf5 = LOW;
+          verde = FALSE;
           estadoPrograma = 2;
         }
       }
@@ -388,8 +377,6 @@ void actualizarLcd(){
     break;
     case 3:
       apagarLeds();
-
-      char msg[16] = "";//funciona para el sprintf
 
       lcd.setCursor(0, 0);
       lcd.print("  Felicidades!  ");
@@ -549,32 +536,6 @@ void retencionInicio(){
       }
     break;
   }
-}
-
-bool estadoInfras(){
-  /*Cada sensor infrarojo tiene asociada una variable que cambia de estado al notar que se activo el infra*/
-  if(digitalRead(infra1) == HIGH){
-    inf1 = TRUE;
-    return TRUE;
-  }
-  if(digitalRead(infra2) == HIGH){
-    inf2 = TRUE;
-    return TRUE;
-  }
-  if(digitalRead(infra3) == HIGH){
-    inf3 = TRUE;
-    return TRUE;
-  }
-  if(digitalRead(infra4) == HIGH){
-    inf4 = TRUE;
-    return TRUE;
-  }
-  if(digitalRead(infra5) == HIGH){
-    inf5 = TRUE;
-    return TRUE;
-  }
-  if(digitalRead(infra1) == LOW && digitalRead(infra2) == LOW && digitalRead(infra3) == LOW && digitalRead(infra4) == LOW && digitalRead(infra5) == LOW)
-    return false;
 }
 
 void apagarLeds(){
